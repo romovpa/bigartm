@@ -37,16 +37,16 @@ with artm.library.MasterComponent() as master:
   dictionary           = master.CreateDictionary(unique_tokens)
 
   # Configure basic scores
-  perplexity_score     = master.CreatePerplexityScore()
-  sparsity_theta_score = master.CreateSparsityThetaScore()
-  sparsity_phi_score   = master.CreateSparsityPhiScore()
-  top_tokens_score     = master.CreateTopTokensScore()
-  theta_snippet_score  = master.CreateThetaSnippetScore()
+  perplexity_score     = master.create_perplexity_score()
+  sparsity_theta_score = master.create_sparsity_theta_score()
+  sparsity_phi_score   = master.create_sparsity_phi_score()
+  top_tokens_score     = master.create_top_tokens_score()
+  theta_snippet_score  = master.create_theta_snippet_score()
 
   # Configure basic regularizers
-  smsp_theta_reg   = master.CreateSmoothSparseThetaRegularizer()
-  smsp_phi_reg     = master.CreateSmoothSparsePhiRegularizer()
-  decorrelator_reg = master.CreateDecorrelatorPhiRegularizer()
+  smsp_theta_reg   = master.create_smooth_sparse_theta_regularizer()
+  smsp_phi_reg     = master.create_smooth_sparse_phi_regularizer()
+  decorrelator_reg = master.create_decorrelator_phi_regularizer()
 
   # Configure the model
   model = master.create_model(topics_count = 10, inner_iterations_count = 10)

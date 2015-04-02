@@ -14,13 +14,22 @@ import logging
 
 from . import messages_pb2
 
-#################################################################################
+# ################################################################################
+
+MasterComponentConfig_ModusOperandi_Local = 0
+MasterComponentConfig_ModusOperandi_Network = 1
+
+CollectionParserConfig_Format_BagOfWordsUci = 0
+CollectionParserConfig_Format_MatrixMarket = 1
+CollectionParserConfig_Format_VowpalWabbit = 2
 
 Stream_Type_Global = 0
 Stream_Type_ItemIdModulus = 1
+
 RegularizerConfig_Type_SmoothSparseTheta = 0
 RegularizerConfig_Type_SmoothSparsePhi = 1
 RegularizerConfig_Type_DecorrelatorPhi = 2
+
 ScoreConfig_Type_Perplexity = 0
 ScoreData_Type_Perplexity = 0
 ScoreConfig_Type_SparsityTheta = 1
@@ -37,11 +46,7 @@ ScoreConfig_Type_TopicKernel = 6
 ScoreData_Type_TopicKernel = 6
 PerplexityScoreConfig_Type_UnigramDocumentModel = 0
 PerplexityScoreConfig_Type_UnigramCollectionModel = 1
-CollectionParserConfig_Format_BagOfWordsUci = 0
-CollectionParserConfig_Format_MatrixMarket = 1
-CollectionParserConfig_Format_VowpalWabbit = 2
-MasterComponentConfig_ModusOperandi_Local = 0
-MasterComponentConfig_ModusOperandi_Network = 1
+
 
 #################################################################################
 
@@ -55,6 +60,7 @@ ARTM_INVALID_OPERATION = -6
 ARTM_DISK_READ_ERROR = -7
 ARTM_DISK_WRITE_ERROR = -8
 ARTM_NETWORK_ERROR = -9
+
 
 class InternalError(BaseException):
     """
@@ -120,7 +126,7 @@ def handle_error_code(lib, artm_error_code):
 
 #################################################################################
 
-class Library:
+class Library(object):
     def __init__(self, artm_shared_library=None):
         if artm_shared_library is None:
             if sys.platform == 'win32':
@@ -210,7 +216,7 @@ class Library:
 
 #################################################################################
 
-class MasterComponent:
+class MasterComponent(object):
     def __init__(self, config=None, lib=None, disk_path=None):
         if config is None:
             config = messages_pb2.MasterComponentConfig()
@@ -254,8 +260,6 @@ class MasterComponent:
     def get_config(self):
         return self.config_
 
-    # ---------- Regularizer ----------
-
     def create_regularizer(self, name, type, config):
         general_config = messages_pb2.RegularizerConfig()
         general_config.name = name
@@ -263,39 +267,45 @@ class MasterComponent:
         general_config.config = config.SerializeToString()
         return Regularizer(self, general_config)
 
-    def CreateSmoothSparseThetaRegularizer(self, name=None, config=None, topic_names=None):
+    def _create_specific_regularizer(self, type, type_name, config_message, name=None,
+                                     config=None, topic_names=None, class_ids=None):
         if name is None:
-            name = "SmoothSparseThetaRegularizer:" + uuid.uuid1().urn
+            name = '{}:{}'.format(type_name, uuid.uuid1().urn)
         if config is None:
-            config = messages_pb2.SmoothSparseThetaConfig()
+            config = config_message()
         if topic_names is not None:
             for topic_name in topic_names:
                 config.topic_name.append(topic_name)
-        return self.create_regularizer(name, RegularizerConfig_Type_SmoothSparseTheta, config)
+        if class_ids is not None:
+            for class_id in class_ids:
+                config.class_id.append(class_id)
+        return self.create_regularizer(name, type, config)
 
-    def CreateSmoothSparsePhiRegularizer(self, name=None, config=None, topic_names=None):
-        if name is None:
-            name = "SmoothSparsePhiRegularizer:" + uuid.uuid1().urn
-        if config is None:
-            config = messages_pb2.SmoothSparsePhiConfig()
-        if topic_names is not None:
-            for topic_name in topic_names:
-                config.topic_name.append(topic_name)
-        return self.create_regularizer(name, RegularizerConfig_Type_SmoothSparsePhi, config)
+    def create_smooth_sparse_theta_regularizer(self, **kwargs):
+        return self._create_specific_regularizer(
+            type=RegularizerConfig_Type_SmoothSparseTheta,
+            type_name='SmoothSparseThetaRegularizer',
+            config_message=messages_pb2.SmoothSparseThetaConfig,
+            **kwargs
+        )
 
-    def CreateDecorrelatorPhiRegularizer(self, name=None, config=None, topic_names=None):
-        if name is None:
-            name = "DecorrelatorPhiRegularizer:" + uuid.uuid1().urn
-        if config is None:
-            config = messages_pb2.DecorrelatorPhiConfig()
-        if topic_names is not None:
-            for topic_name in topic_names:
-                config.topic_name.append(topic_name)
-        return self.create_regularizer(name, RegularizerConfig_Type_DecorrelatorPhi, config)
+    def create_smooth_sparse_phi_regularizer(self, **kwargs):
+        return self._create_specific_regularizer(
+            type=RegularizerConfig_Type_SmoothSparsePhi,
+            type_name='SmoothSparsePhiRegularizer',
+            config_message=messages_pb2.SmoothSparsePhiConfig,
+            **kwargs
+        )
 
-    ### ---------- Scores ----------
+    def create_decorrelator_phi_regularizer(self, **kwargs):
+        return self._create_specific_regularizer(
+            type=RegularizerConfig_Type_DecorrelatorPhi,
+            type_name='DecorrelatorPhiRegularizer',
+            config_message=messages_pb2.DecorrelatorPhiConfig,
+            **kwargs
+        )
 
-    def CreateScore(self, name, type, config):
+    def create_score(self, name, type, config):
         master_config = messages_pb2.MasterComponentConfig()
         master_config.CopyFrom(self.config_)
         score_config = master_config.score_config.add()
@@ -305,43 +315,14 @@ class MasterComponent:
         self.reconfigure(master_config)
         return Score(self, name)
 
-    def CreatePerplexityScore(self, name=None, config=messages_pb2.PerplexityScoreConfig(), stream_name=None):
+    def _create_specific_score(self, type, type_name, config_message, name=None,
+                               config=None, stream_name=None, topic_names=None, num_tokens=None, class_id=None):
         if name is None:
-            name = "PerplexityScore:" + uuid.uuid1().urn
+            name = '{}:{}'.format(type_name, uuid.uuid1().urn)
+        if config is None:
+            config = config_message()
         if stream_name is not None:
             config.stream_name = stream_name
-        return self.CreateScore(name, ScoreConfig_Type_Perplexity, config)
-
-    def CreateSparsityThetaScore(self, name=None, config=None, topic_names=None):
-        if config is None:
-            config = messages_pb2.SparsityThetaScoreConfig()
-        if topic_names is not None:
-            for topic_name in topic_names:
-                config.topic_name.append(topic_name)
-        if name is None:
-            name = "SparsityThetaScore:" + uuid.uuid1().urn
-        return self.CreateScore(name, ScoreConfig_Type_SparsityTheta, config)
-
-    def CreateSparsityPhiScore(self, name=None, config=None, topic_names=None):
-        if config is None:
-            config = messages_pb2.SparsityPhiScoreConfig()
-        if topic_names is not None:
-            for topic_name in topic_names:
-                config.topic_name.append(topic_name)
-        if name is None:
-            name = "SparsityPhiScore:" + uuid.uuid1().urn
-
-        return self.CreateScore(name, ScoreConfig_Type_SparsityPhi, config)
-
-    def CreateItemsProcessedScore(self, name=None, config=messages_pb2.ItemsProcessedScoreConfig()):
-        if name is None:
-            name = "ItemsProcessedScore:" + uuid.uuid1().urn
-        return self.CreateScore(name, ScoreConfig_Type_ItemsProcessed, config)
-
-    def CreateTopTokensScore(self, name=None, config=None, num_tokens=None,
-                             class_id=None, topic_names=None):
-        if config is None:
-            config = messages_pb2.TopTokensScoreConfig()
         if topic_names is not None:
             for topic_name in topic_names:
                 config.topic_name.append(topic_name)
@@ -349,38 +330,71 @@ class MasterComponent:
             config.num_tokens = num_tokens
         if class_id is not None:
             config.class_id = class_id
-        if name is None:
-            name = "TopTokensScore:" + uuid.uuid1().urn
-        return self.CreateScore(name, ScoreConfig_Type_TopTokens, config)
+        return self.create_score(name, type, config)
 
-    def CreateThetaSnippetScore(self, name=None, config=None, topic_names=None):
-        if config is None:
-            config = messages_pb2.ThetaSnippetScoreConfig()
-        if topic_names is not None:
-            for topic_name in topic_names:
-                config.topic_name.append(topic_name)
-        if name is None:
-            name = "ThetaSnippetScore:" + uuid.uuid1().urn
-        return self.CreateScore(name, ScoreConfig_Type_ThetaSnippet, config)
+    def create_perplexity_score(self, **kwargs):
+        return self._create_specific_score(
+            type=ScoreConfig_Type_Perplexity,
+            type_name='PerplexityScore',
+            config_message=messages_pb2.PerplexityScoreConfig,
+            **kwargs
+        )
 
-    def CreateTopicKernelScore(self, name=None, config=None, topic_names=None):
-        if config is None:
-            config = messages_pb2.TopicKernelScoreConfig()
-        if topic_names is not None:
-            for topic_name in topic_names:
-                config.topic_name.append(topic_name)
-        if name is None:
-            name = "TopicKernelScore:" + uuid.uuid1().urn
-        return self.CreateScore(name, ScoreConfig_Type_TopicKernel, config)
+    def create_sparsity_theta_score(self, **kwargs):
+        return self._create_specific_score(
+            type=ScoreConfig_Type_SparsityTheta,
+            type_name='SparsityThetaScore',
+            config_message=messages_pb2.SparsityThetaScoreConfig,
+            **kwargs
+        )
 
-    # ---------- Other ----------
+    def create_sparsity_phi_score(self, **kwargs):
+        return self._create_specific_score(
+            type=ScoreConfig_Type_SparsityPhi,
+            type_name='SparsityPhiScore',
+            config_message=messages_pb2.SparsityPhiScoreConfig,
+            **kwargs
+        )
+
+    def create_items_processed_score(self, **kwargs):
+        return self._create_specific_score(
+            type=ScoreConfig_Type_ItemsProcessed,
+            type_name='ItemsProcessedScore',
+            config_message=messages_pb2.ItemsProcessedScoreConfig,
+            **kwargs
+        )
+
+    def create_top_tokens_score(self, **kwargs):
+        return self._create_specific_score(
+            type=ScoreConfig_Type_TopTokens,
+            type_name='TopTokensScore',
+            config_message=messages_pb2.TopTokensScoreConfig,
+            **kwargs
+        )
+
+    def create_theta_snippet_score(self, **kwargs):
+        return self._create_specific_score(
+            type=ScoreConfig_Type_ThetaSnippet,
+            type_name='ThetaSnippetScore',
+            config_message=messages_pb2.ThetaSnippetScoreConfig,
+            **kwargs
+        )
+
+    def create_topic_kernel_score(self, **kwargs):
+        return self._create_specific_score(
+            type=ScoreConfig_Type_TopicKernel,
+            type_name='TopicKernelScore',
+            config_message=messages_pb2.TopicKernelScoreConfig,
+            **kwargs
+        )
 
     def reconfigure(self, config=None):
         if config is None:
             config = self.config_
         config_blob = config.SerializeToString()
         config_blob_p = ctypes.create_string_buffer(config_blob)
-        handle_error_code(self.lib_, self.lib_.ArtmReconfigureMasterComponent(self.id_, len(config_blob), config_blob_p))
+        handle_error_code(self.lib_,
+                          self.lib_.ArtmReconfigureMasterComponent(self.id_, len(config_blob), config_blob_p))
         self.config_.CopyFrom(config)
 
     def add_batch(self, batch=None, batch_filename=None, timeout=-1, reset_scores=False):
@@ -436,6 +450,7 @@ class MasterComponent:
 
 #################################################################################
 
+
 class NodeController(object):
     def __init__(self, endpoint, lib=None):
         config = messages_pb2.NodeControllerConfig()
@@ -466,6 +481,7 @@ class NodeController(object):
 
 #################################################################################
 
+
 class Model(object):
     def __init__(self, master_component, config):
         self.lib_ = master_component.lib_
@@ -494,10 +510,6 @@ class Model(object):
     def get_name(self):
         return self.config_.name
 
-    def name(self):
-        # TODO: remove this function
-        raise NotImplementError('Use model.get_name() instead of model.name()!!!')
-
     def topics_count(self):
         return self.config_.topics_count
 
@@ -518,7 +530,7 @@ class Model(object):
 
     def synchronize(self, decay_weight=0.0, apply_weight=1.0, invoke_regularizers=True):
         args = messages_pb2.SynchronizeModelArgs()
-        args.model_name = self.name()
+        args.model_name = self.get_name()
         args.decay_weight = decay_weight
         args.apply_weight = apply_weight
         args.invoke_regularizers = invoke_regularizers
@@ -531,21 +543,25 @@ class Model(object):
 
     def initialize(self, dictionary):
         args = messages_pb2.InitializeModelArgs()
-        args.model_name = self.name()
-        args.dictionary_name = dictionary.name()
+        args.model_name = self.get_name()
+        args.dictionary_name = dictionary.get_name()
         blob = args.SerializeToString()
         blob_p = ctypes.create_string_buffer(blob)
-        handle_error_code(self.lib_,
-                        self.lib_.ArtmInitializeModel(self.master_id_, len(blob), blob_p))
+        handle_error_code(
+            self.lib_,
+            self.lib_.ArtmInitializeModel(self.master_id_, len(blob), blob_p)
+        )
 
     def overwrite(self, topic_model, commit=True):
         copy_ = messages_pb2.TopicModel()
         copy_.CopyFrom(topic_model)
-        copy_.name = self.name()
+        copy_.name = self.get_name()
         blob = copy_.SerializeToString()
         blob_p = ctypes.create_string_buffer(blob)
-        handle_error_code(self.lib_,
-                        self.lib_.ArtmOverwriteTopicModel(self.master_id_, len(blob), blob_p))
+        handle_error_code(
+            self.lib_,
+            self.lib_.ArtmOverwriteTopicModel(self.master_id_, len(blob), blob_p)
+        )
 
         if commit:
             self.master_component.wait_idle()
@@ -566,13 +582,13 @@ class Model(object):
     def enable_score(self, score):
         config_copy_ = messages_pb2.ModelConfig()
         config_copy_.CopyFrom(self.config_)
-        config_copy_.score_name.append(score.name())
+        config_copy_.score_name.append(score.get_name())
         self.reconfigure(config_copy_)
 
     def enable_regularizer(self, regularizer, tau):
         config_copy_ = messages_pb2.ModelConfig()
         config_copy_.CopyFrom(self.config_)
-        config_copy_.regularizer_name.append(regularizer.name())
+        config_copy_.regularizer_name.append(regularizer.get_name())
         config_copy_.regularizer_tau.append(tau)
         self.reconfigure(config_copy_)
 
@@ -581,10 +597,16 @@ class Model(object):
         args.model_name = self.get_name()
 
         args_blob = args.SerializeToString()
-        length = handle_error_code(self.lib_, self.lib_.ArtmRequestTopicModel(self.id_, len(args_blob), args_blob))
+        length = handle_error_code(
+            self.lib_,
+            self.lib_.ArtmRequestTopicModel(self.id_, len(args_blob), args_blob)
+        )
 
         topic_model_blob = ctypes.create_string_buffer(length)
-        handle_error_code(self.lib_, self.lib_.ArtmCopyRequestResult(length, topic_model_blob))
+        handle_error_code(
+            self.lib_,
+            self.lib_.ArtmCopyRequestResult(length, topic_model_blob)
+        )
 
         topic_model = messages_pb2.TopicModel()
         topic_model.ParseFromString(topic_model_blob)
@@ -599,15 +621,23 @@ class Model(object):
             args.clean_cache = clean_cache
 
         args_blob = args.SerializeToString()
-        length = handle_error_code(self.lib_, self.lib_.ArtmRequestThetaMatrix(self.id_, len(args_blob), args_blob))
+        length = handle_error_code(
+            self.lib_,
+            self.lib_.ArtmRequestThetaMatrix(self.id_, len(args_blob), args_blob)
+        )
         blob = ctypes.create_string_buffer(length)
-        handle_error_code(self.lib_, self.lib_.ArtmCopyRequestResult(length, blob))
+        handle_error_code(
+            self.lib_,
+            self.lib_.ArtmCopyRequestResult(length, blob)
+        )
 
         theta_matrix = messages_pb2.ThetaMatrix()
         theta_matrix.ParseFromString(blob)
         return theta_matrix
 
+
 #################################################################################
+
 
 class Regularizer(object):
     def __init__(self, master_component, config):
@@ -639,13 +669,9 @@ class Regularizer(object):
     def get_name(self):
         return self.config_.name
 
-    def name(self):
-        # TODO: remove this method
-        raise NotImplementedError('Use regularized.get_name() instead of regularizer.name()!!!')
-
     def reconfigure(self, type, config):
         general_config = messages_pb2.RegularizerConfig()
-        general_config.name = self.name()
+        general_config.name = self.get_name()
         general_config.type = type
         general_config.config = config.SerializeToString()
 
@@ -656,7 +682,8 @@ class Regularizer(object):
             self.lib_.ArtmReconfigureRegularizer(
                 self.master_id_,
                 len(regularizer_config_blob),
-                regularizer_config_blob_p)
+                regularizer_config_blob_p
+            )
         )
         self.config_.CopyFrom(general_config)
 
@@ -670,7 +697,9 @@ class Regularizer(object):
         regularizer_state.ParseFromString(state_blob)
         return regularizer_state
 
+
 #################################################################################
+
 
 class Dictionary(object):
     def __init__(self, master_component, config):
@@ -681,10 +710,7 @@ class Dictionary(object):
         dictionary_config_blob_p = ctypes.create_string_buffer(dictionary_config_blob)
         handle_error_code(
             self.lib_,
-            self.lib_.ArtmCreateDictionary(
-                self.master_id_,
-                len(dictionary_config_blob),
-                dictionary_config_blob_p)
+            self.lib_.ArtmCreateDictionary(self.master_id_, len(dictionary_config_blob), dictionary_config_blob_p)
         )
 
     def __enter__(self):
@@ -701,24 +727,18 @@ class Dictionary(object):
     def get_name(self):
         return self.config_.name
 
-    def name(self):
-        # TODO: remove this method
-        raise NotImplementedError('Use dictionary.get_name() instead of dictionary.name()!!!')
-
     def reconfigure(self, config):
         dictionary_config_blob = config.SerializeToString()
         dictionary_config_blob_p = ctypes.create_string_buffer(dictionary_config_blob)
         handle_error_code(
             self.lib_,
-            self.lib_.ArtmReconfigureDictionary(
-                self.master_id_,
-                len(dictionary_config_blob),
-                dictionary_config_blob_p)
+            self.lib_.ArtmReconfigureDictionary(self.master_id_, len(dictionary_config_blob), dictionary_config_blob_p)
         )
         self.config_.CopyFrom(config)
 
 
 #################################################################################
+
 
 class Score(object):
     def __init__(self, master_component, score_name):
@@ -729,20 +749,18 @@ class Score(object):
     def get_name(self):
         return self.score_name_
 
-    def name(self):
-        # TODO: remove this method
-        raise NotImplementedError('Use score.get_name() instead of score.name()!!!')
-
     def get_value(self, model=None, batch=None):
         args = messages_pb2.GetScoreValueArgs()
         args.score_name = self.score_name_
         if model is not None:
-            args.model_name = model.name()
+            args.model_name = model.get_name()
         if batch is not None:
             args.batch.CopyFrom(batch)
         args_blob = args.SerializeToString()
-        length = handle_error_code(self.lib_,
-                                 self.lib_.ArtmRequestScore(self.master_id_, len(args_blob), args_blob))
+        length = handle_error_code(
+            self.lib_,
+            self.lib_.ArtmRequestScore(self.master_id_, len(args_blob), args_blob)
+        )
         blob = ctypes.create_string_buffer(length)
         handle_error_code(self.lib_, self.lib_.ArtmCopyRequestResult(length, blob))
 

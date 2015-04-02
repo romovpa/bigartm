@@ -115,11 +115,11 @@ perplexity_collection_config.dictionary_name = unique_tokens.name
 # === TRAIN TOPIC MODEL ================================================================================================
 with artm.library.MasterComponent(master_config) as master:
     dictionary = master.CreateDictionary(unique_tokens)
-    perplexity_score = master.CreatePerplexityScore(config = perplexity_collection_config)
-    smooth_sparse_phi = master.CreateSmoothSparsePhiRegularizer()
-    smooth_sparse_theta = master.CreateSmoothSparseThetaRegularizer()
+    perplexity_score = master.create_perplexity_score(config = perplexity_collection_config)
+    smooth_sparse_phi = master.create_smooth_sparse_phi_regularizer()
+    smooth_sparse_theta = master.create_smooth_sparse_theta_regularizer()
 
-    items_processed_score = master.CreateItemsProcessedScore()
+    items_processed_score = master.create_items_processed_score()
 
     # Configure the model
     model = master.create_model(config=artm.messages_pb2.ModelConfig(),
@@ -171,9 +171,9 @@ with artm.library.MasterComponent(test_master_config) as test_master:
     print "Done. "
 
     test_dictionary = test_master.CreateDictionary(unique_tokens)
-    test_perplexity_score = test_master.CreatePerplexityScore(config = perplexity_collection_config)
-    smooth_sparse_phi = test_master.CreateSmoothSparsePhiRegularizer()
-    smooth_sparse_theta = test_master.CreateSmoothSparseThetaRegularizer()
+    test_perplexity_score = test_master.create_perplexity_score(config = perplexity_collection_config)
+    smooth_sparse_phi = test_master.create_smooth_sparse_phi_regularizer()
+    smooth_sparse_theta = test_master.create_smooth_sparse_theta_regularizer()
 
     test_model = test_master.create_model(topics_count = numTopics, inner_iterations_count = numInnerIters)
     test_model.enable_score(test_perplexity_score)

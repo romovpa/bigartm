@@ -30,8 +30,8 @@ with artm.library.MasterComponent() as master:
   test_stream.residuals.append(test_stream.modulus - 1)
   master.create_stream(test_stream)
 
-  perplexity_train_score = master.CreatePerplexityScore(stream_name = train_stream.name)
-  perplexity_test_score  = master.CreatePerplexityScore(stream_name = test_stream.name)
+  perplexity_train_score = master.create_perplexity_score(stream_name = train_stream.name)
+  perplexity_test_score  = master.create_perplexity_score(stream_name = test_stream.name)
 
   # Configure the model
   model = master.create_model(topics_count = 10, inner_iterations_count = 10)

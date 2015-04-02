@@ -95,21 +95,21 @@ with artm.library.MasterComponent(master_config) as master:
   dictionary = master.CreateDictionary(dictionary_message)
 
   # create and configure scores in Master
-  perplexity_score = master.CreatePerplexityScore()
-  sparsity_theta_score = master.CreateSparsityThetaScore()
-  sparsity_phi_score = master.CreateSparsityPhiScore()
+  perplexity_score = master.create_perplexity_score()
+  sparsity_theta_score = master.create_sparsity_theta_score()
+  sparsity_phi_score = master.create_sparsity_phi_score()
 
   topic_kernel_score_config = artm.messages_pb2.TopicKernelScoreConfig()
   topic_kernel_score_config.probability_mass_threshold = probability_threshold
-  topic_kernel_score = master.CreateTopicKernelScore(config = topic_kernel_score_config)
+  topic_kernel_score = master.create_topic_kernel_score(config = topic_kernel_score_config)
   
-  items_processed_score = master.CreateItemsProcessedScore()
+  items_processed_score = master.create_items_processed_score()
 
 
   # create and configure regularizers in Master
-  decorrelator_reg = master.CreateDecorrelatorPhiRegularizer()
-  sparse_phi_reg = master.CreateSmoothSparsePhiRegularizer()
-  sparse_theta_reg = master.CreateSmoothSparseThetaRegularizer()
+  decorrelator_reg = master.create_decorrelator_phi_regularizer()
+  sparse_phi_reg = master.create_smooth_sparse_phi_regularizer()
+  sparse_theta_reg = master.create_smooth_sparse_theta_regularizer()
 
   # create configuration of Model
   model_config                        = artm.messages_pb2.ModelConfig()
@@ -268,7 +268,7 @@ if (save_and_test_model):
     # create static dictionary in Master
     test_dictionary = test_master.CreateDictionary(dictionary_message)
     # create perplexity score in Master
-    test_perplexity_score = test_master.CreatePerplexityScore()
+    test_perplexity_score = test_master.create_perplexity_score()
     
     # Create model for testing and enable perplexity scoring in it
     test_model = test_master.create_model(topics_count = topics_count, inner_iterations_count = inner_iterations_count)

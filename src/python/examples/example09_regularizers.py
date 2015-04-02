@@ -25,18 +25,18 @@ with artm.library.MasterComponent() as master:
         else:
             background_topics.append(topic_name)
 
-    perplexity_score = master.CreatePerplexityScore()
-    sparsity_theta_objective = master.CreateSparsityThetaScore(topic_names=objective_topics)
-    sparsity_phi_objective = master.CreateSparsityPhiScore(topic_names=objective_topics)
-    top_tokens_score = master.CreateTopTokensScore()
-    theta_snippet_score = master.CreateThetaSnippetScore()
+    perplexity_score = master.create_perplexity_score()
+    sparsity_theta_objective = master.create_sparsity_theta_score(topic_names=objective_topics)
+    sparsity_phi_objective = master.create_sparsity_phi_score(topic_names=objective_topics)
+    top_tokens_score = master.create_top_tokens_score()
+    theta_snippet_score = master.create_theta_snippet_score()
 
     # Configure basic regularizers
-    theta_objective = master.CreateSmoothSparseThetaRegularizer(topic_names=objective_topics)
-    theta_background = master.CreateSmoothSparseThetaRegularizer(topic_names=background_topics)
-    phi_objective = master.CreateSmoothSparsePhiRegularizer(topic_names=objective_topics)
-    phi_background = master.CreateSmoothSparsePhiRegularizer(topic_names=background_topics)
-    decorrelator_regularizer = master.CreateDecorrelatorPhiRegularizer(topic_names=objective_topics)
+    theta_objective = master.create_smooth_sparse_theta_regularizer(topic_names=objective_topics)
+    theta_background = master.create_smooth_sparse_theta_regularizer(topic_names=background_topics)
+    phi_objective = master.create_smooth_sparse_phi_regularizer(topic_names=objective_topics)
+    phi_background = master.create_smooth_sparse_phi_regularizer(topic_names=background_topics)
+    decorrelator_regularizer = master.create_decorrelator_phi_regularizer(topic_names=objective_topics)
 
     # Configure the model
     model = master.create_model(topics_count=10, inner_iterations_count=30, topic_names=all_topics)

@@ -31,8 +31,8 @@ if (create_local_node_controller):
 proxy_config = artm.messages_pb2.MasterProxyConfig()
 proxy_config.node_connect_endpoint = 'tcp://localhost:5555'
 with artm.library.MasterComponent(proxy_config) as master:
-  perplexity_score = master.CreatePerplexityScore()
-  top_tokens_score = master.CreateTopTokensScore(num_tokens = 4)
+  perplexity_score = master.create_perplexity_score()
+  top_tokens_score = master.create_top_tokens_score(num_tokens = 4)
   model = master.create_model(topics_count = 10, inner_iterations_count = 10)
   model.enable_score(perplexity_score)
   model.enable_score(top_tokens_score)

@@ -66,8 +66,8 @@ with artm.library.MasterComponent() as master:
     dictionary = master.CreateDictionary(unique_tokens)
 
     # Create one top-token score per each class_id
-    ru_top_tokens_score = master.CreateTopTokensScore(class_id='@russian')
-    en_top_tokens_score = master.CreateTopTokensScore(class_id='@english')
+    ru_top_tokens_score = master.create_top_tokens_score(class_id='@russian')
+    en_top_tokens_score = master.create_top_tokens_score(class_id='@english')
 
     # Populate class_id and class_weight in ModelConfig
     config = artm.messages_pb2.ModelConfig()

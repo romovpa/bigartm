@@ -24,7 +24,7 @@ master_config.node_connect_endpoint.append('tcp://localhost:5556')
 
 with artm.library.MasterComponent(config = master_config) as master:
   dictionary = master.CreateDictionary(unique_tokens)
-  perplexity_score = master.CreatePerplexityScore()
+  perplexity_score = master.create_perplexity_score()
   model = master.create_model(topics_count = 10, inner_iterations_count = 10)
   model.enable_score(perplexity_score)
   model.initialize(dictionary)

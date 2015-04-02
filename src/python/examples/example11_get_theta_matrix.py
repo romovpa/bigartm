@@ -12,7 +12,7 @@ with artm.library.MasterComponent(disk_path=batches_disk_path) as master:
     master.reconfigure()
 
     model = master.create_model(topics_count=8)
-    theta_snippet_score = master.CreateThetaSnippetScore()
+    theta_snippet_score = master.create_theta_snippet_score()
     model.enable_score(theta_snippet_score)
 
     for iteration in range(0, 2):

@@ -18,20 +18,20 @@ unique_tokens = artm.library.Library().parse_collection_or_load_dictionary(
   target_folder)
 
 with artm.library.MasterComponent() as master:
-  smsp_theta_reg  = master.CreateSmoothSparseThetaRegularizer()
-  smsp_phi_reg    = master.CreateSmoothSparsePhiRegularizer()
+  smsp_theta_reg  = master.create_smooth_sparse_theta_regularizer()
+  smsp_phi_reg    = master.create_smooth_sparse_phi_regularizer()
 
   # Create dictionary with tokens frequencies
   dictionary = master.CreateDictionary(unique_tokens)
 
   # Default perplexity has type PerplexityScoreConfig_Type_UnigramDocumentModel
-  perplexity_document_score = master.CreatePerplexityScore()
+  perplexity_document_score = master.create_perplexity_score()
 
   # Create perplexity of type PerplexityScoreConfig_Type_UnigramCollectionModel
   perplexity_collection_config = artm.messages_pb2.PerplexityScoreConfig()
   perplexity_collection_config.model_type = artm.library.PerplexityScoreConfig_Type_UnigramCollectionModel
   perplexity_collection_config.dictionary_name = unique_tokens.name
-  perplexity_collection_score = master.CreatePerplexityScore(config = perplexity_collection_config)
+  perplexity_collection_score = master.create_perplexity_score(config = perplexity_collection_config)
 
   # Configure the model
   model = master.create_model(topics_count = 10, inner_iterations_count = 10)

@@ -17,7 +17,7 @@ for processors_count in [4,2,1]:
   with artm.library.MasterComponent() as master:
     dictionary = master.CreateDictionary(unique_tokens)
 
-    perplexity_score = master.CreatePerplexityScore()
+    perplexity_score = master.create_perplexity_score()
     model = master.create_model(topics_count = 10, inner_iterations_count = 10)
     model.enable_score(perplexity_score)
     model.initialize(dictionary)       # Setup initial approximation for Phi matrix.

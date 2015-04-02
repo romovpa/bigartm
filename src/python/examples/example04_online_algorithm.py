@@ -14,16 +14,16 @@ with artm.library.MasterComponent() as master:
     master.reconfigure()
     dictionary = master.CreateDictionary(unique_tokens)
 
-    perplexity_score = master.CreatePerplexityScore()
-    sparsity_theta_score = master.CreateSparsityThetaScore()
-    sparsity_phi_score = master.CreateSparsityPhiScore()
-    top_tokens_score = master.CreateTopTokensScore()
-    theta_snippet_score = master.CreateThetaSnippetScore()
+    perplexity_score = master.create_perplexity_score()
+    sparsity_theta_score = master.create_sparsity_theta_score()
+    sparsity_phi_score = master.create_sparsity_phi_score()
+    top_tokens_score = master.create_top_tokens_score()
+    theta_snippet_score = master.create_theta_snippet_score()
 
     # Configure basic regularizers
-    theta_regularizer = master.CreateSmoothSparseThetaRegularizer()
-    phi_regularizer = master.CreateSmoothSparsePhiRegularizer()
-    decorrelator_regularizer = master.CreateDecorrelatorPhiRegularizer()
+    theta_regularizer = master.create_smooth_sparse_theta_regularizer()
+    phi_regularizer = master.create_smooth_sparse_phi_regularizer()
+    decorrelator_regularizer = master.create_decorrelator_phi_regularizer()
 
     # Configure the model
     model = master.create_model(topics_count=10, inner_iterations_count=10)

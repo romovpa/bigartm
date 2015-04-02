@@ -78,7 +78,7 @@ entry_2.value = 0.6
 artm_library = Library()
 with MasterComponent() as master_component:
   master_component.reconfigure(master_config)
-  perplexity_score = master_component.CreateScore('perplexity_score', ScoreConfig_Type_Perplexity, perplexity_config)
+  perplexity_score = master_component.create_score('perplexity_score', ScoreConfig_Type_Perplexity, perplexity_config)
   master_component.create_stream(stream)
   master_component.remove_stream(stream)
   model = master_component.create_model(model_config)
