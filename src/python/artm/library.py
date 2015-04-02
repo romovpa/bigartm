@@ -311,7 +311,7 @@ class MasterComponent(object):
         score_config = master_config.score_config.add()
         score_config.name = name
         score_config.type = type
-        score_config.get_config = config.SerializeToString()
+        score_config.config = config.SerializeToString()
         self.reconfigure(master_config)
         return Score(self, name)
 
