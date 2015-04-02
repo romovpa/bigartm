@@ -100,7 +100,7 @@ tau0 = 64           # (Online Learning for Latent Dirichlet Allocation, 'Matthew
 alpha = 1.0 / numTopics
 beta  = 1.0 / numTopics
 
-unique_tokens = artm.library.Library().LoadDictionary(train_batches_folder + 'dictionary')
+unique_tokens = artm.library.Library().load_dictionary(train_batches_folder + 'dictionary')
 
 master_config = artm.messages_pb2.MasterComponentConfig()
 master_config.processors_count = numProcessors
@@ -122,28 +122,28 @@ with artm.library.MasterComponent(master_config) as master:
     items_processed_score = master.CreateItemsProcessedScore()
 
     # Configure the model
-    model = master.CreateModel(config=artm.messages_pb2.ModelConfig(),
+    model = master.create_model(config=artm.messages_pb2.ModelConfig(),
                                topics_count=numTopics, inner_iterations_count=numInnerIters)
-    model.EnableScore(items_processed_score)
-    model.EnableRegularizer(smooth_sparse_phi, beta)
-    model.EnableRegularizer(smooth_sparse_theta, alpha)
+    model.enable_score(items_processed_score)
+    model.enable_regularizer(smooth_sparse_phi, beta)
+    model.enable_regularizer(smooth_sparse_theta, alpha)
 
-    model.Initialize(dictionary)    # Initialize random
+    model.initialize(dictionary)    # Initialize random
 
     start_time = time.time()
-    master.InvokeIteration(1)       # Invoke one scan of the entire collection
+    master.invoke_iteration(1)       # Invoke one scan of the entire collection
 
     done = False
     first_sync = True
     next_items_processed = (batch_size * update_every)
     while (not done):
-        done = master.WaitIdle(10)    # Wait 10 ms and check if the number of processed items had changed
-        current_items_processed = items_processed_score.GetValue(model).value
+        done = master.wait_idle(10)    # Wait 10 ms and check if the number of processed items had changed
+        current_items_processed = items_processed_score.get_value(model).value
         if done or (current_items_processed >= next_items_processed):
             update_count = current_items_processed / (batch_size * update_every)
             next_items_processed = current_items_processed + (batch_size * update_every)      # set next model update
             rho = pow(tau0 + update_count, -kappa)                                            # calculate rho
-            model.Synchronize(decay_weight=(0 if first_sync else (1-rho)), apply_weight=rho)  # synchronize model
+            model.synchronize(decay_weight=(0 if first_sync else (1-rho)), apply_weight=rho)  # synchronize model
             first_sync = False
             print "Items processed : %i " % current_items_processed,
             print "Elapsed time : %.3f " % (time.time() - start_time)
@@ -175,16 +175,16 @@ with artm.library.MasterComponent(test_master_config) as test_master:
     smooth_sparse_phi = test_master.CreateSmoothSparsePhiRegularizer()
     smooth_sparse_theta = test_master.CreateSmoothSparseThetaRegularizer()
 
-    test_model = test_master.CreateModel(topics_count = numTopics, inner_iterations_count = numInnerIters)
-    test_model.EnableScore(test_perplexity_score)
-    test_model.EnableRegularizer(smooth_sparse_phi, beta)
-    test_model.EnableRegularizer(smooth_sparse_theta, alpha)
-    test_model.Overwrite(topic_model)  # restore previously saved topic model into test_master
+    test_model = test_master.create_model(topics_count = numTopics, inner_iterations_count = numInnerIters)
+    test_model.enable_score(test_perplexity_score)
+    test_model.enable_regularizer(smooth_sparse_phi, beta)
+    test_model.enable_regularizer(smooth_sparse_theta, alpha)
+    test_model.overwrite(topic_model)  # restore previously saved topic model into test_master
 
     print 'Estimate perplexity on held out batches... '
     perplexity = 0.0; perplexity_norm = 0.0
     for test_batch_filename in glob.glob(test_batches_folder + "*.batch"):
-        test_batch = artm.library.Library().LoadBatch(test_batch_filename)
+        test_batch = artm.library.Library().load_batch(test_batch_filename)
         test_batch_theta = test_master.GetThetaMatrix(model=test_model, batch=test_batch)
         theta_sparsity = calc_theta_sparsity(test_batch_theta)
         (batch_perplexity, batch_perplexity_norm) = calc_perplexity(topic_model, test_batch_theta, test_batch)
@@ -194,6 +194,6 @@ with artm.library.MasterComponent(test_master_config) as test_master:
         perplexity += batch_perplexity; perplexity_norm += batch_perplexity_norm
     print "Overall test perplexity = " + str(math.exp(-perplexity / perplexity_norm))
 
-    test_master.InvokeIteration()
-    test_master.WaitIdle()
-    print "Test Perplexity calculated in BigARTM = %.3f" % test_perplexity_score.GetValue(test_model).value
+    test_master.invoke_iteration()
+    test_master.wait_idle()
+    print "Test Perplexity calculated in BigARTM = %.3f" % test_perplexity_score.get_value(test_model).value

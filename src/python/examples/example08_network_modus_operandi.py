@@ -12,7 +12,7 @@ target_folder = 'kos'  # network path of a shared folder with batches to process
                        # The folder must be reachable from all remote node controllers.
 
 # load tokens from from local dictionary file
-unique_tokens = artm.library.Library().LoadDictionary('kos/dictionary')
+unique_tokens = artm.library.Library().load_dictionary('kos/dictionary')
 
 master_config = artm.messages_pb2.MasterComponentConfig()
 master_config.modus_operandi = artm.library.MasterComponentConfig_ModusOperandi_Network
@@ -25,17 +25,17 @@ master_config.node_connect_endpoint.append('tcp://localhost:5556')
 with artm.library.MasterComponent(config = master_config) as master:
   dictionary = master.CreateDictionary(unique_tokens)
   perplexity_score = master.CreatePerplexityScore()
-  model = master.CreateModel(topics_count = 10, inner_iterations_count = 10)
-  model.EnableScore(perplexity_score)
-  model.Initialize(dictionary)
+  model = master.create_model(topics_count = 10, inner_iterations_count = 10)
+  model.enable_score(perplexity_score)
+  model.initialize(dictionary)
 
   for iter in range(0, 8):
-    master.InvokeIteration(1)        # Invoke one scan of the entire collection...
-    master.WaitIdle();               # and wait until it completes.
-    model.Synchronize();             # Synchronize topic model.
+    master.invoke_iteration(1)        # Invoke one scan of the entire collection...
+    master.wait_idle();               # and wait until it completes.
+    model.synchronize();             # Synchronize topic model.
     print "Iter#" + str(iter),
-    print ": Perplexity = %.3f" % perplexity_score.GetValue(model).value
+    print ": Perplexity = %.3f" % perplexity_score.get_value(model).value
 
 if (create_local_node_controller):
-  node_controller1.Dispose()
-  node_controller2.Dispose()
+  node_controller1.dispose()
+  node_controller2.dispose()

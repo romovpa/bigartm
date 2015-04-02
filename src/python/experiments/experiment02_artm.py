@@ -86,8 +86,8 @@ master_config.disk_path        = batches_disk_path
 master_config.processors_count = processors_count
 
 # read static dictionary message with information about collection
-dictionary_message = artm.library.Library().LoadDictionary(dictionary_file)
-test_batch = artm.library.Library().LoadBatch(test_batch_name)
+dictionary_message = artm.library.Library().load_dictionary(dictionary_file)
+test_batch = artm.library.Library().load_batch(test_batch_name)
 
 with artm.library.MasterComponent(master_config) as master:
   print 'Technical tasks and loading model initialization...'
@@ -117,22 +117,22 @@ with artm.library.MasterComponent(master_config) as master:
   model_config.inner_iterations_count = inner_iterations_count
 
   # create Model according to its configuration
-  model = master.CreateModel(model_config)
+  model = master.create_model(model_config)
 
   # enable scores in the Model
-  model.EnableScore(perplexity_score)
-  model.EnableScore(sparsity_theta_score)
-  model.EnableScore(sparsity_phi_score)
-  model.EnableScore(topic_kernel_score)
-  model.EnableScore(items_processed_score)
+  model.enable_score(perplexity_score)
+  model.enable_score(sparsity_theta_score)
+  model.enable_score(sparsity_phi_score)
+  model.enable_score(topic_kernel_score)
+  model.enable_score(items_processed_score)
 
   # enable regularizes in Model and initialize them with 0 tau_coefficients
-  model.EnableRegularizer(decorrelator_reg, 0)
-  model.EnableRegularizer(sparse_phi_reg, 0) 
-  model.EnableRegularizer(sparse_theta_reg, 0)
+  model.enable_regularizer(decorrelator_reg, 0)
+  model.enable_regularizer(sparse_phi_reg, 0)
+  model.enable_regularizer(sparse_theta_reg, 0)
   
   # set initial approximation for Phi matrix
-  model.Initialize(dictionary)
+  model.initialize(dictionary)
 
 #######################################################################################################################
 
@@ -150,7 +150,7 @@ with artm.library.MasterComponent(master_config) as master:
     start_time = time.clock()
     sync_count = -1
     # invoke one scan of the whole collection
-    master.InvokeIteration(1)
+    master.invoke_iteration(1)
 
     done = False
     next_items_processed = batch_size * update_every
@@ -159,36 +159,36 @@ with artm.library.MasterComponent(master_config) as master:
     while (not done):
       online_start_time = time.clock()
       # Wait 'online_timeout' ms and check if the number of processed items had changed
-      done = master.WaitIdle(online_timeout)
-      current_items_processed = items_processed_score.GetValue(model).value
+      done = master.wait_idle(online_timeout)
+      current_items_processed = items_processed_score.get_value(model).value
       if done or (current_items_processed >= next_items_processed):
         sync_count += 1
         update_coef = current_items_processed / (batch_size * update_every)
         next_items_processed = current_items_processed + (batch_size * update_every)      # set next model update
         rho = pow(tau0 + update_coef, -kappa)                                             # calculate rho
-        model.Synchronize(decay_weight=(0 if first_sync else (1-rho)), apply_weight=rho)  # synchronize model
+        model.synchronize(decay_weight=(0 if first_sync else (1-rho)), apply_weight=rho)  # synchronize model
         first_sync = False
 
         # update tau_coefficients of regularizers in Model
         if (need_to_update and (next_items_processed >= first_documents) and (outer_iteration == 0)):
           config_copy = artm.messages_pb2.ModelConfig()
-          config_copy.CopyFrom(model.config())
+          config_copy.CopyFrom(model.get_config())
           config_copy.regularizer_tau[0] = tau_decor
           config_copy.regularizer_tau[1] = tau_phi
           config_copy.regularizer_tau[2] = tau_theta
-          model.Reconfigure(config_copy)
+          model.reconfigure(config_copy)
           need_to_update = False
 
         # get current scores values
-        sparsity_phi_score_value    = sparsity_phi_score.GetValue(model).value
-        sparsity_theta_score_value  = sparsity_theta_score.GetValue(model).value
-        topic_kernel_score_value    = topic_kernel_score.GetValue(model)
-        items_processed_score_value = items_processed_score.GetValue(model).value
+        sparsity_phi_score_value    = sparsity_phi_score.get_value(model).value
+        sparsity_theta_score_value  = sparsity_theta_score.get_value(model).value
+        topic_kernel_score_value    = topic_kernel_score.get_value(model)
+        items_processed_score_value = items_processed_score.get_value(model).value
 
         perplexity_score_value = -1
         if (test_on_this_iter % test_every == 0) or\
            (current_items_processed > last_documents and outer_iteration == outer_iterations_count - 1):
-          perplexity_score_value = perplexity_score.GetValue(model = model, batch = test_batch).value
+          perplexity_score_value = perplexity_score.get_value(model = model, batch = test_batch).value
         test_on_this_iter += 1
 
         # increase time counter and save iteration time
@@ -271,15 +271,15 @@ if (save_and_test_model):
     test_perplexity_score = test_master.CreatePerplexityScore()
     
     # Create model for testing and enable perplexity scoring in it
-    test_model = test_master.CreateModel(topics_count = topics_count, inner_iterations_count = inner_iterations_count)
-    test_model.EnableScore(test_perplexity_score)
+    test_model = test_master.create_model(topics_count = topics_count, inner_iterations_count = inner_iterations_count)
+    test_model.enable_score(test_perplexity_score)
     
     # restore previously saved topic model into test_master
-    test_model.Overwrite(topic_model)
+    test_model.overwrite(topic_model)
 
     # process batches, count perplexity and display the result
     print 'Estimate perplexity on held-out batches...\n'
-    test_master.InvokeIteration()
-    test_master.WaitIdle()
-    print "Test Perplexity calculated in BigARTM = %.3f" % test_perplexity_score.GetValue(test_model).value
+    test_master.invoke_iteration()
+    test_master.wait_idle()
+    print "Test Perplexity calculated in BigARTM = %.3f" % test_perplexity_score.get_value(test_model).value
 print '\n=======Experiment was finished=======\n'

@@ -77,49 +77,49 @@ entry_2.value = 0.6
 
 artm_library = Library()
 with MasterComponent() as master_component:
-  master_component.Reconfigure(master_config)
+  master_component.reconfigure(master_config)
   perplexity_score = master_component.CreateScore('perplexity_score', ScoreConfig_Type_Perplexity, perplexity_config)
-  master_component.CreateStream(stream)
-  master_component.RemoveStream(stream)
-  model = master_component.CreateModel(model_config)
-  master_component.RemoveModel(model)
-  model = master_component.CreateModel(model_config)
+  master_component.create_stream(stream)
+  master_component.remove_stream(stream)
+  model = master_component.create_model(model_config)
+  master_component.remove_model(model)
+  model = master_component.create_model(model_config)
 
   dictionary = master_component.CreateDictionary(dictionary_config)
-  regularizer = master_component.CreateRegularizer('regularizer_1', 0, smsp_theta_config)
+  regularizer = master_component.create_regularizer('regularizer_1', 0, smsp_theta_config)
   master_component.RemoveRegularizer(regularizer)
-  regularizer = master_component.CreateRegularizer('regularizer_1', 0, smsp_theta_config)
+  regularizer = master_component.create_regularizer('regularizer_1', 0, smsp_theta_config)
 
-  regularizer_phi = master_component.CreateRegularizer('regularizer_2', 1, smsp_phi_config)
+  regularizer_phi = master_component.create_regularizer('regularizer_2', 1, smsp_phi_config)
 
-  model.Enable()
+  model.enable()
   batch.id = str(uuid.uuid4())
   for i in range(0, 10):
-    master_component.AddBatch(batch)
-  master_component.WaitIdle()
-  model.Synchronize(0.0)
-  model.Disable()
+    master_component.add_batch(batch)
+  master_component.wait_idle()
+  model.synchronize(0.0)
+  model.disable()
   args_tm = messages_pb2.GetTopicModelArgs()
   args_tm.model_name = model.name()
   topic_model = master_component.GetTopicModel(None, args = args_tm)
   args_theta = messages_pb2.GetThetaMatrixArgs()
   args_theta.model_name = model.name()
   theta_matrix = master_component.GetThetaMatrix(None, args = args_theta)
-  perplexity_score = perplexity_score.GetValue(model)
+  perplexity_score = perplexity_score.get_value(model)
 
-  model.Overwrite(topic_model);
+  model.overwrite(topic_model);
 
   # Test all 'reconfigure' methods
-  regularizer.Reconfigure(0, smsp_theta_config)
-  model.Reconfigure(model_config_new)
-  master_config_new = master_component.config();
+  regularizer.reconfigure(0, smsp_theta_config)
+  model.reconfigure(model_config_new)
+  master_config_new = master_component.get_config();
   master_config_new.processors_count = 1
   master_config_new.processor_queue_max_size = 2
-  master_component.Reconfigure(master_config_new)
+  master_component.reconfigure(master_config_new)
   master_component.RemoveDictionary(dictionary)
 
 with NodeController("tcp://*:5555") as node_controller:
   with MasterComponent(master_proxy_config) as master_component:
-    master_component.Reconfigure(master_config)
+    master_component.reconfigure(master_config)
 
 print 'All tests have been successfully passed!'

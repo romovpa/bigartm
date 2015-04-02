@@ -12,7 +12,7 @@ import artm.messages_pb2, artm.library, sys
 data_folder = sys.argv[1] if (len(sys.argv) >= 2) else ''
 target_folder = 'kos'
 collection_name = 'kos'
-unique_tokens = artm.library.Library().ParseCollectionOrLoadDictionary(
+unique_tokens = artm.library.Library().parse_collection_or_load_dictionary(
   data_folder + 'docword.'+ collection_name + '.txt',
   data_folder + 'vocab.' + collection_name + '.txt',
   target_folder)
@@ -34,19 +34,19 @@ with artm.library.MasterComponent() as master:
   perplexity_collection_score = master.CreatePerplexityScore(config = perplexity_collection_config)
 
   # Configure the model
-  model = master.CreateModel(topics_count = 10, inner_iterations_count = 10)
-  model.EnableScore(perplexity_document_score)
-  model.EnableScore(perplexity_collection_score)
-  model.EnableRegularizer(smsp_theta_reg, -1.0)
-  model.EnableRegularizer(smsp_phi_reg, -1.0)
-  model.Initialize(dictionary)       # Setup initial approximation for Phi matrix.
+  model = master.create_model(topics_count = 10, inner_iterations_count = 10)
+  model.enable_score(perplexity_document_score)
+  model.enable_score(perplexity_collection_score)
+  model.enable_regularizer(smsp_theta_reg, -1.0)
+  model.enable_regularizer(smsp_phi_reg, -1.0)
+  model.initialize(dictionary)       # Setup initial approximation for Phi matrix.
 
   for iter in range(0, 8):
-    master.InvokeIteration(disk_path=target_folder)  # Invoke one scan of the entire collection...
-    master.WaitIdle();                               # and wait until it completes.
-    model.Synchronize();                             # Synchronize topic model.
-    perplexity_collection = perplexity_collection_score.GetValue(model)
-    perplexity_document   = perplexity_document_score.GetValue(model)
+    master.invoke_iteration(disk_path=target_folder)  # Invoke one scan of the entire collection...
+    master.wait_idle();                               # and wait until it completes.
+    model.synchronize();                             # Synchronize topic model.
+    perplexity_collection = perplexity_collection_score.get_value(model)
+    perplexity_document   = perplexity_document_score.get_value(model)
     print "Iter#" + str(iter),
     print ": Collection perplexity = %.3f" % perplexity_collection.value,
     print ", Document perplexity = %.3f " % perplexity_document.value,

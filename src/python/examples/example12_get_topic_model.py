@@ -11,12 +11,12 @@ with artm.library.MasterComponent(disk_path=batches_disk_path) as master:
     topic_names = []
     for topic_index in range(0, 10):
         topic_names.append("Topic" + str(topic_index))
-    model = master.CreateModel(topic_names=topic_names)
+    model = master.create_model(topic_names=topic_names)
 
     for iteration in range(0, 2):
-        master.InvokeIteration()
-        master.WaitIdle()  # wait for all batches are processed
-        model.Synchronize()  # synchronize model
+        master.invoke_iteration()
+        master.wait_idle()  # wait for all batches are processed
+        model.synchronize()  # synchronize model
 
     # The following code retrieves one topic at a time.
     # This avoids retrieving large topic models in a single protobuf message.

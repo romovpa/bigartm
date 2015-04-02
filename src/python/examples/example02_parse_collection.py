@@ -25,11 +25,11 @@ if batches_found == 0:
   collection_parser_config.vocab_file_path = data_folder + 'vocab.'+ collection_name + '.txt'
   collection_parser_config.target_folder = target_folder
   collection_parser_config.dictionary_file_name = 'dictionary'
-  unique_tokens = artm.library.Library().ParseCollection(collection_parser_config);
+  unique_tokens = artm.library.Library().parse_collection(collection_parser_config);
   print " OK."
 else:
   print "Found " + str(batches_found) + " batches, using them."
-  unique_tokens  = artm.library.Library().LoadDictionary(target_folder + '/dictionary');
+  unique_tokens  = artm.library.Library().load_dictionary(target_folder + '/dictionary');
 
 # Create master component and infer topic model
 with artm.library.MasterComponent() as master:
@@ -49,25 +49,25 @@ with artm.library.MasterComponent() as master:
   decorrelator_reg = master.CreateDecorrelatorPhiRegularizer()
 
   # Configure the model
-  model = master.CreateModel(topics_count = 10, inner_iterations_count = 10)
-  model.EnableScore(perplexity_score)
-  model.EnableScore(sparsity_phi_score)
-  model.EnableScore(sparsity_theta_score)
-  model.EnableScore(top_tokens_score)
-  model.EnableScore(theta_snippet_score)
-  model.EnableRegularizer(smsp_theta_reg, -0.1)
-  model.EnableRegularizer(smsp_phi_reg, -0.2)
-  model.EnableRegularizer(decorrelator_reg, 1000000)
-  model.Initialize(dictionary)       # Setup initial approximation for Phi matrix.
+  model = master.create_model(topics_count = 10, inner_iterations_count = 10)
+  model.enable_score(perplexity_score)
+  model.enable_score(sparsity_phi_score)
+  model.enable_score(sparsity_theta_score)
+  model.enable_score(top_tokens_score)
+  model.enable_score(theta_snippet_score)
+  model.enable_regularizer(smsp_theta_reg, -0.1)
+  model.enable_regularizer(smsp_phi_reg, -0.2)
+  model.enable_regularizer(decorrelator_reg, 1000000)
+  model.initialize(dictionary)       # Setup initial approximation for Phi matrix.
 
   for iter in range(0, 8):
-    master.InvokeIteration(disk_path=target_folder)  # Invoke one scan over all batches,
-    master.WaitIdle();                               # and wait until it completes.
-    model.Synchronize();                             # Synchronize topic model.
+    master.invoke_iteration(disk_path=target_folder)  # Invoke one scan over all batches,
+    master.wait_idle();                               # and wait until it completes.
+    model.synchronize();                             # Synchronize topic model.
     print "Iter#" + str(iter),
-    print ": Perplexity = %.3f" % perplexity_score.GetValue(model).value,
-    print ", Phi sparsity = %.3f" % sparsity_phi_score.GetValue(model).value,
-    print ", Theta sparsity = %.3f" % sparsity_theta_score.GetValue(model).value
+    print ": Perplexity = %.3f" % perplexity_score.get_value(model).value,
+    print ", Phi sparsity = %.3f" % sparsity_phi_score.get_value(model).value,
+    print ", Theta sparsity = %.3f" % sparsity_theta_score.get_value(model).value
 
-  artm.library.Visualizers.PrintTopTokensScore(top_tokens_score.GetValue(model))
-  artm.library.Visualizers.PrintThetaSnippetScore(theta_snippet_score.GetValue(model))
+  artm.library.Visualizers.print_top_tokens_score(top_tokens_score.get_value(model))
+  artm.library.Visualizers.print_theta_snippet_score(theta_snippet_score.get_value(model))

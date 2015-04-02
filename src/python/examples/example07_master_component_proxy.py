@@ -33,19 +33,19 @@ proxy_config.node_connect_endpoint = 'tcp://localhost:5555'
 with artm.library.MasterComponent(proxy_config) as master:
   perplexity_score = master.CreatePerplexityScore()
   top_tokens_score = master.CreateTopTokensScore(num_tokens = 4)
-  model = master.CreateModel(topics_count = 10, inner_iterations_count = 10)
-  model.EnableScore(perplexity_score)
-  model.EnableScore(top_tokens_score)
+  model = master.create_model(topics_count = 10, inner_iterations_count = 10)
+  model.enable_score(perplexity_score)
+  model.enable_score(top_tokens_score)
 
   for iter in range(0, 10):
-    master.AddBatch(batch)           # Invoke one scan of this batch...
-    master.WaitIdle();               # and wait until it completes.
-    model.Synchronize();             # Synchronize topic model.
-    print "Iter#" + str(iter) + ": Perplexity = %.3f" % perplexity_score.GetValue(model).value
+    master.add_batch(batch)           # Invoke one scan of this batch...
+    master.wait_idle();               # and wait until it completes.
+    model.synchronize();             # Synchronize topic model.
+    print "Iter#" + str(iter) + ": Perplexity = %.3f" % perplexity_score.get_value(model).value
 
-  top_tokens = top_tokens_score.GetValue(model)
+  top_tokens = top_tokens_score.get_value(model)
 
-artm.library.Visualizers.PrintTopTokensScore(top_tokens)
+artm.library.Visualizers.print_top_tokens_score(top_tokens)
 
 if (create_local_node_controller):
-  node_controller.Dispose()
+  node_controller.dispose()

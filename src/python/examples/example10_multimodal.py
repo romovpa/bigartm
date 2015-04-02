@@ -77,17 +77,17 @@ with artm.library.MasterComponent() as master:
     config.class_weight.append(1.00)
 
     # Create and initialize model, enable scores. Our expert knowledge says we need 2 topics ;)
-    model = master.CreateModel(topics_count=2, inner_iterations_count=10, config=config)
-    model.Initialize(dictionary)  # Setup initial approximation for Phi matrix.
-    model.EnableScore(ru_top_tokens_score)
-    model.EnableScore(en_top_tokens_score)
+    model = master.create_model(topics_count=2, inner_iterations_count=10, config=config)
+    model.initialize(dictionary)  # Setup initial approximation for Phi matrix.
+    model.enable_score(ru_top_tokens_score)
+    model.enable_score(en_top_tokens_score)
 
     # Infer the model in 10 passes over the batch
     for iteration in range(0, 10):
-        master.AddBatch(batch=batch)
-        master.WaitIdle()  # wait for all batches are processed
-        model.Synchronize()  # synchronize model
+        master.add_batch(batch=batch)
+        master.wait_idle()  # wait for all batches are processed
+        model.synchronize()  # synchronize model
 
     # Retrieve and visualize top tokens in each topic
-    artm.library.Visualizers.PrintTopTokensScore(ru_top_tokens_score.GetValue(model))
-    artm.library.Visualizers.PrintTopTokensScore(en_top_tokens_score.GetValue(model))
+    artm.library.Visualizers.print_top_tokens_score(ru_top_tokens_score.get_value(model))
+    artm.library.Visualizers.print_top_tokens_score(en_top_tokens_score.get_value(model))
