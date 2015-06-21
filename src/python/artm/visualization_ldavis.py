@@ -3,13 +3,14 @@ import jinja2
 import os
 import binascii
 
+
 class TopicModelVisualization(object):
     def __init__(self, data):
         self.data = data
 
     def _generate_json(self):
         return json.dumps(self.data)
-        
+
     def _repr_html_(self):
         random_figid = binascii.hexlify(os.urandom(16))
         html = TEMPLATE_NOTEBOOK.render(
@@ -20,14 +21,14 @@ class TopicModelVisualization(object):
             extra_css=LDAVIS_CSS,
         )
         return html
-        
+
     def to_file(self, filename, title=None):
         if title is None:
             title = 'LDAvis Topic Model Visualization'
-            
+
         with open('../artm/_js/ldavis.js') as f:
             js_code = f.read()
-            
+
         html = TEMPLATE_PAGE.render(
             title=title,
             d3_url=URL_D3,
@@ -100,7 +101,6 @@ if(typeof(LDAvis) !== "undefined"){
 }
 </script>
 """)
-
 
 TEMPLATE_PAGE = jinja2.Template("""
 <!DOCTYPE html>

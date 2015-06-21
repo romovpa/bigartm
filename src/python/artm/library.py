@@ -9,10 +9,10 @@ import glob
 import messages_pb2
 
 
-#################################################################################
+# ################################################################################
 
-ARTM_SUCCESS = 0                   # Has no corresponding exception type.
-ARTM_STILL_WORKING = -1            # Has no corresponding exception type.
+ARTM_SUCCESS = 0  # Has no corresponding exception type.
+ARTM_STILL_WORKING = -1  # Has no corresponding exception type.
 ARTM_INTERNAL_ERROR = -2
 ARTM_ARGUMENT_OUT_OF_RANGE = -3
 ARTM_INVALID_MASTER_ID = -4
@@ -67,11 +67,23 @@ TopicModel_OperationType_Ignore = 4
 #################################################################################
 
 class InternalError(BaseException): pass
+
+
 class ArgumentOutOfRangeException(BaseException): pass
+
+
 class InvalidMasterIdException(BaseException): pass
+
+
 class CorruptedMessageException(BaseException): pass
+
+
 class InvalidOperationException(BaseException): pass
+
+
 class DiskReadException(BaseException): pass
+
+
 class DiskWriteException(BaseException): pass
 
 
@@ -99,6 +111,7 @@ def HandleErrorCode(lib, artm_error_code):
         raise DiskWriteException(GetLastErrorMessage(lib))
     else:
         raise InternalError("Unknown error code: " + str(artm_error_code))
+
 
 #################################################################################
 
@@ -130,8 +143,11 @@ class Library:
 
         print "Failed to load artm shared library. " \
               "Try to add the location of '" + default_artm_shared_library + "' file into " \
-              "your PATH system variable, or to set ARTM_SHARED_LIBRARY - a specific system variable " \
-              "which may point to '" + default_artm_shared_library + "' file, including the full path."
+                                                                             "your PATH system variable, " \
+                                                                             "or to set ARTM_SHARED_LIBRARY - a " \
+                                                                             "specific system variable " \
+                                                                             "which may point to '" + \
+              default_artm_shared_library + "' file, including the full path."
         sys.exit(1)
 
 
@@ -198,6 +214,7 @@ class Library:
         else:
             print "Found " + str(batches_found) + " batches, using them."
             return self.LoadDictionary(target_folder + '/dictionary')
+
 
 #################################################################################
 
@@ -545,7 +562,7 @@ class MasterComponent:
             for topic_name in topic_names:
                 args.topic_name.append(topic_name)
         if use_sparse_format is not None:
-            args.use_sparse_format=use_sparse_format
+            args.use_sparse_format = use_sparse_format
         if request_type is not None:
             args.request_type = request_type
 
@@ -751,6 +768,7 @@ class MasterComponent:
         args_blob = args.SerializeToString()
         HandleErrorCode(self.lib_, self.lib_.ArtmNormalizeModel(self.id_, len(args_blob), args_blob))
 
+
 #################################################################################
 
 class Model:
@@ -866,6 +884,7 @@ class Model:
         config_copy_.regularizer_tau.append(tau)
         self.Reconfigure(config_copy_)
 
+
 #################################################################################
 
 class Regularizer:
@@ -906,6 +925,7 @@ class Regularizer:
                                                                         regularizer_config_blob_p))
         self.config_.CopyFrom(general_config)
 
+
 #################################################################################
 
 class Dictionary:
@@ -940,6 +960,7 @@ class Dictionary:
                                                                        len(dictionary_config_blob),
                                                                        dictionary_config_blob_p))
         self.config_.CopyFrom(config)
+
 
 #################################################################################
 
@@ -1012,6 +1033,7 @@ class Score:
 
         # Unknown score type
         raise ArgumentOutOfRangeException("ScoreData.type")
+
 
 #################################################################################
 
